@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      User-facing text lives here so it can be translated without touching code.
+      The vocabulary is deliberately small (spec SC-005 caps the jargon the user
+      must learn at three terms: computer, project, agent).
+    -->
+    <string name="app_name">Perch</string>
+    <string name="pair_title">Add your computer</string>
+    <!-- The designed path is a link you tap, so the copy leads with it. The form
+         below is the fallback, not the instruction. -->
+    <string name="pair_step_one">On your computer, run:</string>
+    <string name="pair_command">perch-bridge pair</string>
+    <string name="pair_step_two">It prints a perch:// link. Send it to yourself in any chat app, open it on this phone, and tap Connect. That is the whole setup.</string>
+    <string name="pair_manual_heading">Or type the two values by hand</string>
+    <string name="pair_address">Address</string>
+    <string name="pair_token">Token</string>
+    <string name="pair_action">Connect</string>
+    <string name="pair_no_config_needed">Perch does not change anything on your computer. Your projects and agents stay exactly as they are.</string>
+    <!--
+      A failure on this phone, not on the computer: the token is encrypted with a key
+      in the phone's keystore, and that can be unavailable. Saying "could not reach the
+      computer" here would send the user to debug a machine that just answered.
+    -->
+    <string name="pair_store_failed">This phone could not store the connection securely, so Perch did not connect.</string>
+    <string name="pair_bad_address">That does not look like an address or a pairing link. It should be like 100.64.0.1:45999, or the perch:// link from your computer.</string>
+    <string name="pair_paste_hint">You can also paste the whole perch:// link into either field.</string>
+    <string name="nothing_waiting">Nothing needs you right now.</string>
+    <string name="status_working">working</string>
+    <string name="status_idle">idle</string>
+    <string name="status_blocked">waiting on you</string>
+    <string name="status_done">finished</string>
+    <string name="status_unknown">unknown</string>
+
+    <!-- Notifications -->
+    <string name="channel_decisions">Decisions</string>
+    <string name="channel_decisions_desc">Tells you when an agent is waiting for you. This is the one to keep loud.</string>
+    <string name="channel_watching">Staying connected</string>
+    <string name="channel_watching_desc">A quiet line while Perch keeps in touch with your computer. Safe to silence.</string>
+    <string name="decision_title">%1$s needs you in %2$s</string>
+    <!--
+      The same sentence when the request is on another computer (spec FR-016):
+      without the machine name, two cards from two computers read identically.
+    -->
+    <string name="decision_title_on_host">%1$s needs you in %2$s on %3$s</string>
+    <string name="decision_no_detail">The agent is waiting. Open Perch to see what it asked.</string>
+    <string name="decision_others_waiting">+%1$d more waiting</string>
+    <string name="decision_needs_computer">This one needs the computer — Perch cannot press it for you.</string>
+    <string name="action_approve">Approve</string>
+    <string name="action_reject">Reject</string>
+    <string name="problem_title">That did not go through</string>
+    <string name="watching_title">Perch is watching your computer</string>
+    <string name="watching_live">Connected. Nothing needs you right now.</string>
+    <string name="watching_connecting">Connecting…</string>
+    <string name="watching_retrying">Not connected — will keep trying.</string>
+    <string name="watching_unpaired">Not set up yet. Open Perch to add your computer.</string>
+    <!--
+      The line above the queue. Separate from the service's notification text on
+      purpose: a notification may say "nothing needs you right now", but this line
+      sits directly above the queue and must not contradict it — which it did, in
+      the first version, claiming nothing needed you above a waiting decision.
+    -->
+    <string name="connection_live">Connected to your computer.</string>
+    <string name="connection_retrying">Not connected — retrying.</string>
+    <string name="request_resolved_elsewhere">A request is no longer waiting on you, so it has left your queue.</string>
+
+    <!-- Queue -->
+    <string name="tab_decisions">Waiting</string>
+    <string name="tab_projects">Projects</string>
+    <string name="approve">Approve</string>
+    <string name="reject">Reject</string>
+    <string name="answer">Answer</string>
+    <string name="cannot_press_for_you">Perch cannot press this one for you</string>
+    <string name="open_the_session">Open the session</string>
+    <string name="session_refresh">Refresh</string>
+    <string name="session_close">Close</string>
+    <string name="session_empty">This session has nothing on screen yet.</string>
+    <string name="session_truncated">Older output is not shown — the rest is still on your computer.</string>
+    <!--
+      The reading face's empty state, which is a different sentence from session_empty:
+      "nothing on screen yet" describes a terminal, and this screen stopped being one.
+      Here nobody has said anything yet, and that is all it means.
+    -->
+    <string name="session_nothing_said">Nothing said yet.</string>
+    <!--
+      The working indicator: an agent is mid-turn, and Perch knows how long it has been
+      going (the agent's own record says so). One label, two forms — a duration it
+      measured, or just the state when nobody has taught Perch to read this agent.
+    -->
+    <string name="session_working">working · %1$s</string>
+    <!--
+      Marks the user's own turns. They are the interruptions on this screen — the
+      agent's answers are the body of what is being read — so it is they that need a
+      label, not every message.
+    -->
+    <string name="session_you">You</string>
+    <string name="session_input_hint">Type here, then send.</string>
+    <string name="session_note_shell">No agent here, just a shell: a line break in what you send runs that line.</string>
+    <!--
+      What "send" actually did, in both cases. The first real trial found that
+      "Sent to the session." reads as "it ran", and the user typed a command, saw
+      nothing, and concluded the screen was inert (2026-10-13). Nothing is sent to
+      execute: the text goes to the pane's input, and pressing enter is what submits
+      it — which the escape hatch deliberately leaves to the user, because in a shell
+      a line break runs the line, and we are not going to press Enter inside someone's
+      terminal on our own. So the sentence says what happened and what is left to do.
+    -->
+    <string name="session_terminal">Session screen</string>
+    <string name="session_sent_shell">Typed at the prompt. Press enter in the key row to run it.</string>
+    <string name="session_sent_agent">Sent to the session.</string>
+    <string name="session_sent_blocked">Typed at the dialog. Press enter in the key row to submit it.</string>
+    <string name="session_unsent">Text is already waiting in the terminal, so sending will add to it: %1$s</string>
+    <string name="session_unsent_title">The terminal already has text</string>
+    <string name="session_unsent_body">Its own input line holds:\n\n%1$s\n\nSending %2$s will add it to the end of that and submit the two as one line.</string>
+    <string name="session_unsent_send_anyway">Send anyway</string>
+    <string name="session_unsent_command_title">The input line holds a command</string>
+    <string name="session_unsent_command_body">Its own input line holds a command:\n\n%1$s\n\nSending %2$s will make it the argument of that command — not a message. Press Escape in the terminal first if that is not what you want.</string>
+    <string name="session_unsent_cancel">Cancel</string>
+    <!--
+      A menu — codex's model picker, a slash-command list — is open in this session.
+      Typing into one drives it (measured: a sentence sent while the picker was open
+      advanced it to the next question), and the computer reports such a session as idle,
+      so nothing else can tell. Refusing and pointing at the keys is the honest move.
+    -->
+    <string name="session_menu">A menu is open in this session, so Perch will not type into it. Open the terminal to press the keys.</string>
+    <string name="session_setup_title">This agent is still being set up</string>
+    <string name="session_setup_fallback">Finish its setup in the terminal before sending messages.</string>
+    <string name="session_setup_open_terminal">Open terminal</string>
+    <!-- Shown over the text while the reader has scrolled away from the end. -->
+    <string name="session_follow_latest">Jump to latest</string>
+    <string name="session_usage">Usage</string>
+    <string name="session_usage_title">Usage</string>
+    <string name="session_usage_reading">Reading the agent\'s own records…</string>
+    <string name="session_usage_nothing_yet">This agent has not written down any usage for this session yet. Its own screen still has the running total.</string>
+    <string name="session_usage_not_readable">Perch does not know how to read this agent\'s records yet, so there is nothing to show here. Its own screen still has the running total.</string>
+    <string name="session_usage_close">Close</string>
+    <!--
+      The real terminal: the session's own screen, drawn by an emulator. Opened from the menu, and the
+      keys under it are the ones a phone keyboard does not have (Escape, Tab, arrows, Ctrl).
+    -->
+    <string name="terminal_title">Terminal · %1$s</string>
+    <string name="terminal_reconnect">Reconnect</string>
+    <!--
+      "New terminal": end the shell that is running and start another. Named for what it does to the
+      *shell* rather than for what it does to the screen, because the two are different — and the thing a
+      person usually wants after a shell has stopped is another one, not the same one again.
+    -->
+    <string name="terminal_new">New</string>
+    <!--
+      Shown at the bottom of the terminal while the app is coming back to a shell that is still running.
+      A state, not a failure: the shell lives on the computer, so a phone that lost the network gets the
+      terminal back rather than an error to act on.
+    -->
+    <string name="terminal_reconnecting">Reconnecting to your terminal…</string>
+    <!--
+      The console's own entry to the terminal — a shell on the computer, not a session's screen. The other
+      name in this file, `session_terminal` ("Session screen"), is the pane viewer.
+    -->
+    <string name="console_terminal">Terminal</string>
+    <!--
+      Naming and ending things (2026-10-15). Every sentence here has to survive being read by somebody who is
+      about to lose work, so the words say what happens rather than what the feature is called.
+    -->
+    <string name="manage_rename">Rename…</string>
+    <string name="manage_close_session">Close session</string>
+    <string name="manage_close_project">Close project</string>
+    <string name="manage_renamed">Renamed to \"%1$s\"</string>
+    <string name="manage_name_cleared">Name cleared — the session shows what it is running again.</string>
+    <string name="manage_closed">Closed.</string>
+    <string name="manage_failed">That did not work.</string>
+    <string name="manage_failed_fix">Nothing was changed. If it keeps failing, do it on your computer.</string>
+    <string name="manage_rename_title">Name this session</string>
+    <string name="manage_rename_project_title">Name this project</string>
+    <string name="manage_rename_hint">A short name you will recognise in the list.</string>
+    <string name="manage_rename_save">Save</string>
+    <string name="manage_rename_clear">Clear the name</string>
+    <string name="manage_cancel">Cancel</string>
+    <string name="manage_created">Created \"%1$s\"</string>
+    <string name="manage_create_failed_fix">Nothing was created. If it keeps failing, do it on your computer.</string>
+    <string name="new_project">New project</string>
+    <string name="new_session">New session</string>
+    <string name="new_project_title">New project</string>
+    <string name="new_session_title">New session in %1$s</string>
+    <string name="new_project_name">Project name</string>
+    <string name="new_project_folder">Working folder</string>
+    <string name="new_project_no_folder">No folder chosen yet</string>
+    <string name="new_project_choose_folder">Choose folder…</string>
+    <string name="new_project_use_home">Use home folder</string>
+    <string name="new_project_home_warning">This is your home folder. A harness started here may ask you to trust the folder.</string>
+    <string name="folder_picker_title">Choose a working folder</string>
+    <string name="folder_picker_current">Current folder</string>
+    <string name="folder_picker_up">Up</string>
+    <string name="folder_picker_home">Home</string>
+    <string name="folder_picker_recent">Recent folders</string>
+    <string name="folder_picker_manual">Full path</string>
+    <string name="folder_picker_subfolders">Subfolders</string>
+    <string name="folder_picker_tap_to_open">Tap a folder to open it.</string>
+    <string name="folder_picker_press_go">Press Go on the keyboard to open this path.</string>
+    <string name="folder_picker_use">Use this folder</string>
+    <string name="folder_picker_empty">No folders here.</string>
+    <string name="folder_picker_truncated">Only the first folders are shown. Type the full path to go straight there.</string>
+    <string name="folder_picker_loading">Looking…</string>
+    <string name="folder_picker_failed_fix">Choose another folder, or type its full path and try again.</string>
+    <string name="new_session_name">Session name (optional)</string>
+    <string name="new_session_harness">Harness</string>
+    <string name="new_session_args">Arguments, one per line (optional)</string>
+    <string name="new_session_args_hint">Each line is passed as one argument. Leave blank to start normally.</string>
+    <string name="new_session_create">Create</string>
+    <string name="new_session_no_harness">No supported harness was found on this computer.</string>
+    <string name="new_session_loading_harnesses">Looking for harnesses…</string>
+    <string name="new_session_choose_harness">Choose a harness</string>
+    <string name="new_session_creating">Creating…</string>
+    <!--
+      Closing a session stops whatever is running in it, and there is no undo in herdr — so the sentence says
+      that, and says what the agent was doing, because "an agent was working" is the fact that decides it.
+    -->
+    <string name="manage_close_session_title">Close this session?</string>
+    <string name="manage_close_session_working">%1$s is working right now. Closing this session stops it, and that work is gone.</string>
+    <string name="manage_close_session_body">The program in this session stops and the session disappears. This cannot be undone.</string>
+    <string name="manage_close_session_confirm">Close it</string>
+    <!--
+      Measured on a live herdr (2026-10-15): closing the *last* session of a project closes the project too,
+      because herdr has no such thing as an empty project. One sentence, and it is the difference between a
+      close somebody meant and a project that vanished.
+    -->
+    <string name="manage_close_last_session">This is the last session in %1$s — closing it closes the project as well.</string>
+    <string name="manage_close_project_title">Close %1$s?</string>
+    <string name="manage_close_project_body">Every session in this project stops and the project disappears. This cannot be undone.</string>
+    <!--
+      A plural, not a sentence with an "s" on the end. Found on a device (2026-10-15): the first version said
+      "1 sessions are running in it" over a project that held exactly one, which reads like the app does not
+      know what it is about to close — the worst possible impression for this particular dialog.
+    -->
+    <plurals name="manage_close_project_count">
+        <item quantity="one">%1$d session is running in it.</item>
+        <item quantity="other">%1$d sessions are running in it.</item>
+    </plurals>
+    <string name="manage_close_project_confirm">Close the project</string>
+    <!--
+      A button that sends a picture of this screen to the user's own computer.
+
+      It is here because two days of "the terminal is black" were two days of nobody being able to *see*
+      the screen: a question about pixels, argued with words. Nothing takes a picture on its own — this is
+      a button, and the picture goes to the machine the phone is already paired with.
+    -->
+    <string name="terminal_send_screen">Send screen</string>
+    <string name="terminal_ended">The terminal stopped: %1$s</string>
+    <!--
+      The escape hatch's key bar. Two sentences matter here and both have to be
+      true: what the keys are for, and why there is no one-tap answer for this
+      particular dialog.
+    -->
+    <string name="session_no_one_tap">Perch does not recognise this dialog. Press the keys below.</string>
+    <string name="back_to_projects">‹ Projects</string>
+    <string name="no_sessions_in_project">This project has no sessions right now.</string>
+    <string name="plain_shell">shell</string>
+    <string name="no_agent_running">no agent running</string>
+    <!--
+      The computers this phone can see (spec FR-016). With one machine none of
+      these appear; with two, every project says which one it is on, and a machine
+      that did not answer says why (FR-015) instead of looking like a machine whose
+      projects vanished.
+    -->
+    <string name="computers_heading">Computers</string>
+    <string name="host_this_computer">this computer</string>
+    <string name="host_connected">connected</string>
+    <string name="host_unreachable_title">did not answer</string>
+    <string name="host_disabled">off — you turned it off</string>
+    <string name="pair_fields_hint">Perch uses the same two words your computer printed, so you can match them up.</string>
+
+    <!-- Failure copy. Every one of these pairs a reason with a next step. -->
+    <string name="failure_not_paired">This phone is no longer connected to your computer.</string>
+    <string name="failure_not_paired_fix">Open Perch and connect again.</string>
+    <string name="failure_unreachable">Your computer did not answer.</string>
+    <string name="failure_unreachable_fix">Anything you wrote has been kept and will go through when your computer answers again.</string>
+    <string name="failure_refused">Your computer would not do that.</string>
+    <string name="failure_refused_fix">Open the session on your computer and answer there.</string>
+    <string name="show_what_it_asked">What it asked</string>
+    <string name="compose_title">Your reply</string>
+    <string name="compose_send">Send</string>
+    <string name="compose_discard">Discard</string>
+    <string name="compose_hint">Type here, then send. Nothing reaches the agent until you send.</string>
+    <!-- Voice. The entry is absent unless the user has set up their own key. -->
+    <string name="voice_start">Speak instead</string>
+    <string name="voice_listening">Listening…</string>
+    <string name="voice_stop">Use this</string>
+    <string name="voice_discard">Throw away</string>
+    <string name="voice_transcribing">Turning that into text…</string>
+    <string name="voice_hint">What you say goes into the box above. You still choose when to send it.</string>
+    <string name="voice_setup_title">Voice input</string>
+    <string name="voice_setup_body">Optional. Bring your own key for a transcription service, and Perch will let you speak an instruction instead of typing it. The recording goes straight to that service — never through anything of ours — and it is deleted as soon as it has been transcribed.</string>
+    <string name="voice_setup_key">Transcription key</string>
+    <string name="voice_setup_endpoint">Service address</string>
+    <string name="voice_setup_save">Save</string>
+    <string name="voice_setup_remove">Remove key</string>
+    <string name="voice_setup_saved">Voice input is ready.</string>
+    <string name="voice_setup_removed">Voice input is off, and the key is gone.</string>
+    <string name="voice_no_microphone">Perch could not use the microphone.</string>
+    <string name="voice_no_microphone_fix">Allow microphone access for Perch in Android settings, then try again.</string>
+    <string name="voice_too_short">That was too short to make anything of.</string>
+    <string name="voice_too_short_fix">Hold on a moment longer, then tap "Use this".</string>
+    <string name="voice_not_configured">Voice input is not set up.</string>
+    <string name="voice_not_configured_fix">Add a transcription key in Settings, or type your instruction.</string>
+    <string name="keep_watching">Watch for decisions while this phone is idle</string>
+    <string name="keep_watching_detail">Adds one quiet notification. Without it, Perch only tells you about a decision while the app is open.</string>
+    <!--
+      The one setting that silently makes the whole product useless: Android
+      notifications turned off for Perch. Without a sentence here, the user's
+      experience is "my agent was waiting and my phone never told me", and nothing
+      anywhere says why (spec FR-015: every state carries a reason and a next step).
+    -->
+    <string name="failure_bridge_too_old">The Perch on your computer is older than this app.</string>
+    <string name="failure_bridge_too_old_fix">Update it there: build or download the current perch-bridge and run install-service again.</string>
+    <string name="failure_app_too_old">This app is older than the Perch on your computer.</string>
+    <string name="failure_app_too_old_fix">Update Perch on this phone from the same place you installed it.</string>
+    <string name="notifications_blocked">Notifications are off for Perch, so a waiting agent cannot reach you.</string>
+    <string name="notifications_blocked_fix">Turn them back on</string>
+    <!--
+      The other silent failure, and the one a Chinese phone hits first: the system
+      stops the watch service after a while even though Android permits it. The only
+      symptom is that notifications stop arriving some minutes after the screen goes
+      off — which reads as "the product stopped working".
+    -->
+    <string name="battery_restricted">Your phone may stop Perch while it is locked, so a waiting agent might not reach you.</string>
+    <string name="battery_restricted_fix">Let it run</string>
+
+    <!-- Pairing by link -->
+    <string name="invite_title">Connect to this computer?</string>
+    <string name="invite_body">Perch will be able to see your projects and agents, and answer the ones that are waiting for you. It does not change anything on your computer.</string>
+    <string name="invite_action">Connect</string>
+    <string name="invite_manual">Type it in instead</string>
+
+    <!-- What the week added up to -->
+    <string name="week_headline">About %1$s back this week</string>
+    <plurals name="week_counts">
+        <item quantity="one">%1$d decision, %2$d of them away from your desk</item>
+        <item quantity="other">%1$d decisions, %2$d of them away from your desk</item>
+    </plurals>
+    <string name="week_how">How is that counted?</string>
+    <plurals name="week_baseline">
+        <item quantity="one">Each decision counts as %1$d second. That is the median time it takes to do the same thing at the computer: switch to the window, read what the agent asked, decide, answer. It is an estimate, and it is the only assumption behind the number above.</item>
+        <item quantity="other">Each decision counts as %1$d seconds. That is the median time it takes to do the same thing at the computer: switch to the window, read what the agent asked, decide, answer. It is an estimate, and it is the only assumption behind the number above.</item>
+    </plurals>
+    <string name="week_nothing_yet">Nothing counted yet this week</string>
+    <string name="week_nothing_yet_detail">Once you answer an agent from your phone, the time it saved shows up here.</string>
+    <string name="reply_queued">Saved. It will be sent when your computer answers again.</string>
+    <string name="reply_queued_fix">Nothing else is needed from you.</string>
+    <plurals name="sent_waiting_replies">
+        <item quantity="one">Sent the reply you had waiting.</item>
+        <item quantity="other">Sent the %1$d replies you had waiting.</item>
+    </plurals>
+</resources>

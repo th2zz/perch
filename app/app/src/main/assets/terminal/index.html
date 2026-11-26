@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Perch terminal</title>
+<link rel="stylesheet" href="xterm.css">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #101014; overflow: hidden; }
+  /*
+   * The pane is drawn at its own size, so a zoomed-in screen is wider than the glass. The glass itself
+   * does not scroll; the terminal is panned sideways instead (see the gesture code), which leaves
+   * xterm's own vertical scrolling and text selection doing exactly what they did before.
+   *
+   * `touch-action: pan-y` is the one line that has to be right: vertical panning stays the browser's
+   * (xterm's viewport is a scrollable element and needs it), while horizontal drags and two-finger
+   * gestures come to this file's handlers instead of being claimed by the browser. `none` would have
+   * been the tempting choice and it breaks scrolling; `auto` would let the browser fight a pinch.
+   */
+  #screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 6px 4px 0 6px;
+    overflow: clip;
+    touch-action: pan-y;
+  }
+  .xterm-viewport { scrollbar-width: thin; }
+  #terminal-viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+</style>
+</head>
+<body>
+<div id="screen"><div id="terminal-viewport"></div></div>
+<script src="fit.js"></script>
+<script src="xterm.js"></script>
+<script>
+(function () {
+  const term = new Terminal({
+    // The phone's own keyboard and xterm's hidden textarea do the input; this only decides what the
+    // screen looks like.
+    cursorBlink: true,
+    fontSize: 13,
+    fontFamily: "monospace",
+    scrollback: 5000,
+    // A terminal that reflows differently from the one on the computer would lie about line
+    // wrapping, so this one is resized to the *computer's* shape rather than reflowing: same
+    // columns, same wrapping, just smaller type (see showHostScreen).
+    convertEol: false,
+    theme: {
+      background: "#101014",
+      foreground: "#e6e6e6",
+      cursor: "#e6e6e6",
+      selectionBackground: "#3a3a5a"
+    }
+  });
+  const glass = document.getElementById("screen");
+  const viewport = document.getElementById("terminal-viewport");
+  term.open(viewport);
+
+  const BASE_FONT = PerchFit.BASE_FONT;
+
+  // What the last `showHostScreen` worked out, and what the reader has since done with two fingers.
+  // Kept here rather than recomputed because a pinch changes the font *without* new information from
+  // the computer: the pane's shape is the same, only the glass's opinion of it changed.
+  let fittedFont = BASE_FONT;
+  let zoom = 1;
+  let paneWidth = 0;
+  let panOffset = 0;
+  // The computer's shape, remembered so that a re-fit after a size change has something to apply.
+  let hostShape = null;
+
+  /**
+   * How big one character cell actually is, measured from the thing that is drawn.
+   *
+   * The first version divided `term.element.offsetWidth` (the *container*, which xterm stretches to the
+   * box it was opened in) by the column count. Measured in a real engine (2026-10-15): a 500-pixel glass
+   * with an 80-column grid gave 6.1px per column, while the drawing was 572px wide — 7.15px per column.
+   * Every fit computed from that was wrong, which is why a 183-column pane came out clipped rather than
+   * fitted. `.xterm-screen` is the element xterm sizes to the grid, so it is the honest source; the
+   * container is a fallback, and the caller is told which one answered.
+   */
+  function reportDom(when) {
+    try {
+      const rows = term.element && term.element.querySelector(".xterm-rows");
+      const first = rows && rows.firstElementChild;
+      const span = first && first.querySelector("span");
+      const rowStyle = first ? getComputedStyle(first) : null;
+      const screen = term.element && term.element.querySelector(".xterm-screen");
+      report(
+        "dom",
+        when +
+          " rows " + (rows ? rows.children.length : -1) +
+          " first " + JSON.stringify((first && first.textContent || "").slice(0, 24)) +
+          " colour " + (rowStyle ? rowStyle.color : "-") +
+          " height " + (rowStyle ? rowStyle.height : "-") +
+          " spanColour " + (span ? getComputedStyle(span).color : "-") +
+          " screen " + (screen ? Math.round(screen.offsetWidth) + "x" + Math.round(screen.offsetHeight) : "-") +
+          " glass " + glass.clientWidth + "x" + glass.clientHeight +
+          " viewport " + window.innerWidth + "x" + window.innerHeight +
+          " doc " + document.documentElement.clientWidth + "x" + document.documentElement.clientHeight +
+          " body " + document.body.clientWidth + "x" + document.body.clientHeight +
+          " style " + getComputedStyle(glass).height +
+          " localScroll " + Math.round(viewport.scrollTop) + "/" + Math.round(viewport.scrollHeight - viewport.clientHeight)
+      );
+    } catch (e) {
+      report("error", "dom probe: " + (e && e.message ? e.message : e));
+    }
+  }
+
+  function gridMetrics() {
+    const cols = Math.max(term.cols, 1);
+    const rows = Math.max(term.rows, 1);
+    const drawn = term.element && term.element.querySelector(".xterm-screen");
+    if (drawn && drawn.offsetWidth > 0 && drawn.offsetHeight > 0) {
+      return { charWidth: drawn.offsetWidth / cols, lineHeight: drawn.offsetHeight / rows, source: "screen" };
+    }
+    const container = term.element;
+    if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+      return {
+        charWidth: container.offsetWidth / cols,
+        lineHeight: container.offsetHeight / rows,
+        source: "container"
+      };
+    }
+    return null;
+  }
+
+  function cursorRange() {
+    const metrics = gridMetrics();
+    if (!metrics) return null;
+    const top = term.buffer.active.cursorY * metrics.lineHeight;
+    return { top: top, bottom: top + metrics.lineHeight };
+  }
+
+  function cursorInView() {
+    const cursor = cursorRange();
+    return cursor && cursor.top >= viewport.scrollTop &&
+      cursor.bottom <= viewport.scrollTop + viewport.clientHeight + 1;
+  }
+
+  function revealCursor() {
+    if (ownSize) return;
+    const cursor = cursorRange();
+    if (!cursor) return;
+    if (cursor.top < viewport.scrollTop) {
+      viewport.scrollTop = cursor.top;
+    } else if (cursor.bottom > viewport.scrollTop + viewport.clientHeight) {
+      viewport.scrollTop = cursor.bottom - viewport.clientHeight;
+    }
+  }
+
+  function setGlass(cssWidth, cssHeight) {
+    try {
+      if (!(cssWidth > 40) || !(cssHeight > 40)) {
+        report("size", "ignoring a glass of " + cssWidth + "x" + cssHeight);
+        return;
+      }
+      const reveal = cursorInView() ||
+        (cssWidth === glass.clientWidth && cssHeight < glass.clientHeight);
+      glass.style.width = cssWidth + "px";
+      glass.style.height = cssHeight + "px";
+      // Who owns the shape decides what a new glass means: for a pane it is the same screen refitted
+      // to a new box, and for a shell of our own it is a grid the computer has to hear about.
+      if (ownSize) {
+        lastReportedSize = "";
+        reportOwnSize();
+        return;
+      }
+      if (hostShape) {
+        showHostScreen(hostShape.cols, hostShape.rows);
+        if (reveal) revealCursor();
+      }
+    } catch (e) {
+      report("error", "setGlass: " + (e && e.message ? e.message : e));
+    }
+  }
+
+  function measurable() {
+    const box = document.getElementById("screen");
+    // The rule lives in fit.js so it can be tested without a phone: a box of a few pixels is what a
+    // rotation and a not-yet-laid-out view look like, and fitting to it is how the host's pane got
+    // resized to 1x2 (2026-10-14).
+    return box && PerchFit.hasRoom(box.clientWidth, box.clientHeight);
+  }
+
+  /*
+   * The other direction: a shell this phone owns.
+   *
+   * The pane viewer draws somebody else's screen at its own shape (below). A *shell*, by contrast, has
+   * no shape until the phone gives it one — so here the phone measures its own glass, draws at a
+   * readable size, and reports the grid to the app, which sends it to the computer as a resize. That is
+   * why the same page can be both things: one flag decides who owns the shape.
+   *
+   * The app calls `ownSize()` before `ready()`. Everything after that — a rotation, a pinch, the keyboard
+   * opening — goes through `reportOwnSize`.
+   */
+  let ownSize = false;
+  let ownFont = BASE_FONT;
+  let lastReportedSize = "";
+
+  function reportOwnSize() {
+    if (!ownSize || !measurable()) {
+      return;
+    }
+    // Measure at the font we are about to draw with, then keep that font: for a terminal of our own the
+    // grid follows the type, not the other way round.
+    term.options.fontSize = ownFont;
+    // Measured from the drawn grid, not from the container, for the reason in the pane path: the
+    // container is stretched to the box xterm was opened in, and dividing that by the column count gave
+    // 6.1px per column where the drawing was 7.15px (measured in a real engine, 2026-10-15).
+    const metrics = gridMetrics();
+    if (!metrics) {
+      return;
+    }
+    const grid = PerchFit.fitGrid({
+      boxWidth: glass.clientWidth,
+      boxHeight: glass.clientHeight,
+      charWidth: metrics.charWidth,
+      lineHeight: metrics.lineHeight
+    });
+    const wanted = grid.cols + "x" + grid.rows;
+    if (wanted === lastReportedSize) {
+      return;
+    }
+    lastReportedSize = wanted;
+    term.resize(grid.cols, grid.rows);
+    // Two calls with two purposes: the numbers are what the app turns into `{"type":"resize"}` on the
+    // socket (the shell hears SIGWINCH and redraws itself for the phone), and the line is for the
+    // computer's log — the only place a gesture or a rotation can be seen from outside the phone.
+    if (window.PerchAndroid && window.PerchAndroid.onSize) {
+      window.PerchAndroid.onSize(grid.cols, grid.rows);
+    }
+    report("size", wanted + " " + grid.reason + " font " + ownFont + "px from " + metrics.source);
+  }
+
+  /*
+   * The pane's screen, drawn on a phone.
+   *
+   * The computer's terminal is whatever shape it is (measured: 183 columns wide on this machine). A
+   * phone's glass is about 45 of those columns at a normal font size, so drawing it 1:1 would show a
+   * quarter of every line. The whole line matters more than the letter size here — the alternative is
+   * cutting the answer in half — so the font shrinks until the *whole width* fits, and the terminal's
+   * own viewport scrolls when the screen is taller than the glass.
+   *
+   * The measurement is taken rather than assumed: the character width depends on the font the device
+   * actually resolved for "monospace", and guessing it is how text ends up half a column off.
+   */
+  function showHostScreen(cols, rows) {
+    if (cols > 0 && rows > 0) {
+      hostShape = { cols: cols, rows: rows };
+    }
+    // Every step of this reports itself to the app, and the whole thing is wrapped: a terminal that
+    // throws while being told its shape is a terminal that draws nothing at all, and that failure would
+    // be invisible from the computer (the bridge only sees a stream that is being written to).
+    try {
+      if (!measurable() || cols <= 0 || rows <= 0) {
+        report("error", "no room to draw: " + cols + "x" + rows);
+        return;
+      }
+      const reveal = cursorInView();
+      term.options.fontSize = BASE_FONT;
+      term.resize(cols, rows);
+      const metrics = gridMetrics();
+      if (!metrics) {
+        report("shaped", cols + "x" + rows + " at default size (no measurement yet)");
+        return;
+      }
+      const charWidth = metrics.charWidth;
+      const lineHeight = metrics.lineHeight;
+      const box = document.getElementById("screen");
+      // The arithmetic (and its clamps, and the meaning of every degenerate input) is in fit.js,
+      // where `scripts/terminal-page/fit.test.js` can hold it still. What stays here is the measuring.
+      const fitted = PerchFit.fitFontSize({
+        boxWidth: box.clientWidth,
+        boxHeight: box.clientHeight,
+        charWidth: charWidth,
+        lineHeight: lineHeight,
+        cols: cols,
+        rows: rows
+      });
+      fittedFont = fitted.size;
+      // The reader's own zoom survives a reshape: the pane turned or changed size, not their eyes.
+      applyZoom(cols, rows);
+      if (reveal) revealCursor();
+      report("shaped", cols + "x" + rows + " font " + term.options.fontSize + "px " + fitted.reason +
+        " from " + metrics.source + " glass " + box.clientWidth + "x" + box.clientHeight);
+    } catch (e) {
+      report("error", "showHostScreen: " + (e && e.message ? e.message : e));
+    }
+  }
+
+  /*
+   * Draw the pane's grid at the size the reader has asked for, and let it be wider than the glass.
+   *
+   * A zoomed screen shows *fewer columns* of the same pane: the grid stays the computer's (cols × rows
+   * — nothing is ever sent back to reshape it, see D37), and the type grows, so the drawing becomes
+   * wider than the phone. That width is the pane element's own width, which is what makes panning at
+   * the bottom of this comment possible.
+   */
+  function applyZoom(cols, rows) {
+    const reveal = cursorInView();
+    term.options.fontSize = PerchFit.zoomFontSize(fittedFont, zoom);
+    // After a font change xterm re-measures the grid itself; one more resize puts the pane's geometry
+    // back on top of it, so the cells the computer sends still land in the right places.
+    term.resize(cols, rows);
+
+    // How wide the *drawing* is, measured where it is drawn rather than assumed from the font size: a
+    // zoomed screen is deliberately wider than the glass, and only the drawing knows by how much.
+    const screen = term.element && term.element.querySelector(".xterm-screen");
+    if (screen && screen.offsetWidth) {
+      paneWidth = screen.offsetWidth;
+    }
+    viewport.style.width = Math.max(paneWidth, glass.clientWidth - 10) + "px";
+    clampPan();
+    if (reveal) revealCursor();
+  }
+
+  /** How far the pane may be slid sideways: enough to reach its right edge, and no further. */
+  function maxPan() {
+    return Math.max(0, paneWidth - glass.clientWidth);
+  }
+
+  function clampPan() {
+    // 0 means "the left edge of the pane is at the left edge of the glass"; a positive offset slides it
+    // left to reveal the columns that fell off the right.
+    panOffset = Math.min(Math.max(panOffset, 0), maxPan());
+    // A transform rather than a scroll offset: nothing re-lays-out, xterm's own viewport keeps
+    // scrolling vertically inside it, and text selection keeps working.
+    if (term.element) {
+      term.element.style.transform = panOffset === 0 ? "" : "translateX(" + (-panOffset) + "px)";
+    }
+  }
+
+  function report(event, detail) {
+    try {
+      if (window.PerchAndroid && window.PerchAndroid.onTerminal) {
+        window.PerchAndroid.onTerminal(String(event), String(detail));
+      }
+    } catch (e) { /* a report must never be the thing that breaks the terminal */ }
+  }
+
+  // An uncaught error in this page used to be completely silent: the app wrote bytes into a WebView that
+  // was not running, and the screen stayed black with nothing anywhere to explain it (2026-10-14).
+  window.onerror = function (message, source, line) {
+    report("error", message + " @" + line);
+  };
+
+  term.onData(function (data) {
+    revealCursor();
+    if (window.PerchAndroid && window.PerchAndroid.onData) {
+      window.PerchAndroid.onData(base64FromBytes(new TextEncoder().encode(data)));
+    }
+  });
+
+  // A rotation or a keyboard opening changes the glass, so the same screen is re-fitted — locally.
+  // Nothing about the computer changes because the phone turned.
+  window.addEventListener("resize", function () {
+    // Who owns the shape decides what a new glass means: for a shell of our own it is a resize the
+    // computer has to hear about; for somebody else's pane it is only a change of type size here.
+    if (ownSize) {
+      lastReportedSize = "";
+      reportOwnSize();
+      return;
+    }
+    showHostScreen(term.cols, term.rows);
+  });
+
+  const TAP_MILLIS = 250;
+  const TAP_SLOP = 12;
+  let gesture = null;
+  let lastTapAt = 0;
+  let lastTapX = 0;
+  let lastTapY = 0;
+
+  function touchDistance(a, b) {
+    const dx = a.clientX - b.clientX;
+    const dy = a.clientY - b.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  glass.addEventListener("touchstart", function (event) {
+    try {
+      if (event.touches.length === 2) {
+        gesture = {
+          kind: "pinch",
+          startDistance: touchDistance(event.touches[0], event.touches[1]),
+          startZoom: zoom
+        };
+        return;
+      }
+      if (event.touches.length !== 1) {
+        gesture = null;
+        return;
+      }
+      const touch = event.touches[0];
+      const now = Date.now();
+      // A double tap returns to the fit. It is the way out of a zoom the reader got into by accident,
+      // and it is here rather than in a button because it costs no screen space on a screen whose whole
+      // problem is that it is too small.
+      if (now - lastTapAt < TAP_MILLIS && Math.abs(touch.clientX - lastTapX) < TAP_SLOP &&
+          Math.abs(touch.clientY - lastTapY) < TAP_SLOP) {
+        lastTapAt = 0;
+        zoom = 1;
+        panOffset = 0;
+        applyZoom(term.cols, term.rows);
+        report("zoom", "reset to fit at font " + term.options.fontSize + "px");
+        return;
+      }
+      lastTapAt = now;
+      lastTapX = touch.clientX;
+      lastTapY = touch.clientY;
+      gesture = {
+        kind: "pan",
+        startX: touch.clientX,
+        startY: touch.clientY,
+        startOffset: panOffset,
+        horizontal: null
+      };
+    } catch (e) {
+      report("error", "touchstart: " + (e && e.message ? e.message : e));
+    }
+  }, { passive: true });
+
+  glass.addEventListener("touchmove", function (event) {
+    try {
+      if (!gesture) {
+        return;
+      }
+      if (gesture.kind === "pinch" && event.touches.length === 2) {
+        // Claimed outright: a two-finger gesture is zoom here, and the browser has nothing to add.
+        event.preventDefault();
+        // A shell of our own reflows instead of being panned: bigger type means fewer columns, and the
+        // computer is told the new shape (which is what a terminal on a phone does — Termux included).
+        if (ownSize) {
+          zoom = PerchFit.zoomFromPinch(
+            gesture.startDistance,
+            touchDistance(event.touches[0], event.touches[1]),
+            gesture.startZoom
+          );
+          ownFont = PerchFit.zoomFontSize(BASE_FONT, zoom);
+          lastReportedSize = "";
+          reportOwnSize();
+          return;
+        }
+        const beforeFont = term.options.fontSize;
+        zoom = PerchFit.zoomFromPinch(
+          gesture.startDistance,
+          touchDistance(event.touches[0], event.touches[1]),
+          gesture.startZoom
+        );
+        // Keep what is under the reader's thumbs under their thumbs (see `panAfterZoom`): a magnifier,
+        // not a page that jumps back to the left edge every time they zoom in.
+        const afterFont = PerchFit.zoomFontSize(fittedFont, zoom);
+        if (beforeFont > 0 && afterFont > 0) {
+          panOffset = PerchFit.panAfterZoom(
+            panOffset,
+            glass.clientWidth / 2,
+            afterFont / beforeFont
+          );
+        }
+        applyZoom(term.cols, term.rows);
+        return;
+      }
+      if (gesture.kind === "pan" && event.touches.length === 1) {
+        // Nothing to pan when the terminal is exactly as wide as the glass, which is always the case for
+        // a shell of our own: its grid is fitted to the glass rather than the glass showing part of it.
+        if (ownSize) {
+          return;
+        }
+        const touch = event.touches[0];
+        const dx = touch.clientX - gesture.startX;
+        const dy = touch.clientY - gesture.startY;
+        // Decided once per gesture, on the first movement worth deciding on: a mostly-vertical drag
+        // belongs to xterm's scrolling, and taking it over would make the terminal feel broken.
+        if (gesture.horizontal === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+          gesture.horizontal = Math.abs(dx) > Math.abs(dy);
+        }
+        if (gesture.horizontal === true) {
+          // Only when there is something to pan to: otherwise a sideways drag is left alone entirely.
+          if (maxPan() > 0) {
+            event.preventDefault();
+            panOffset = gesture.startOffset - dx;
+            clampPan();
+          }
+        }
+      }
+    } catch (e) {
+      report("error", "touchmove: " + (e && e.message ? e.message : e));
+    }
+  }, { passive: false });
+
+  glass.addEventListener("touchend", function (event) {
+    try {
+      if (!gesture) {
+        return;
+      }
+      if (gesture.kind === "pinch" && event.touches.length < 2) {
+        report("zoom", zoom.toFixed(2) + "x font " + term.options.fontSize + "px " +
+          (ownSize ? "grid " + term.cols + "x" + term.rows
+                   : "pan " + Math.round(panOffset) + "/" + Math.round(maxPan())));
+        gesture = null;
+      }
+      if (gesture && gesture.kind === "pan" && event.touches.length === 0) {
+        gesture = null;
+      }
+    } catch (e) {
+      report("error", "touchend: " + (e && e.message ? e.message : e));
+    }
+  }, { passive: true });
+
+  function base64FromBytes(bytes) {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+
+  function bytesFromBase64(value) {
+    const binary = atob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  let written = 0;
+  let revealOnWrite = true;
+
+  window.PerchTerminal = {
+    write: function (base64) {
+      const bytes = bytesFromBase64(base64);
+      const reveal = revealOnWrite;
+      revealOnWrite = false;
+      term.write(bytes, function () { if (reveal) revealCursor(); });
+      // The first write is reported so that "bytes left the computer" and "bytes reached the emulator"
+      // are two different lines in the log rather than one assumption.
+      if (written === 0) {
+        report("bytes", "emulator drew " + bytes.length + " bytes");
+        // Twice, because the first look can land before the renderer has filled the rows it will keep.
+        setTimeout(function () { reportDom("1.5s"); }, 1500);
+        setTimeout(function () { reportDom("3s"); }, 3000);
+      }
+      written += bytes.length;
+    },
+    showHostScreen: showHostScreen,
+    /**
+     * "This terminal is mine": the phone owns the shape (a shell on the computer).
+     *
+     * The app calls this before `ready()` for its own terminal, and never for a pane it is only viewing.
+     */
+    ownSize: function () {
+      ownSize = true;
+      lastReportedSize = "";
+      reportOwnSize();
+    },
+    /** The app's own measurement of this view, in CSS pixels (see setGlass). */
+    setGlass: setGlass,
+    reset: function () { term.reset(); viewport.scrollTop = 0; revealOnWrite = true; },
+    size: function () { return JSON.stringify({ cols: term.cols, rows: term.rows }); },
+    focus: function () { term.focus(); revealCursor(); },
+    // Called by the app once the page is ready. It only focuses: the screen's shape comes from the
+    // computer (the bridge sends it as it attaches), never from this page.
+    ready: function () {
+      report("page", "grid " + term.cols + "x" + term.rows + " glass " + glass.clientWidth + "x" + glass.clientHeight);
+      term.focus();
+    }
+  };
+})();
+</script>
+</body>
+</html>

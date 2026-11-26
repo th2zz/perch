@@ -1,0 +1,35 @@
+[Unit]
+Description=Perch host-side bridge
+Documentation=https://github.com/th2zz/perch#readme
+After=network-online.target
+# Give up rather than retry for ever.
+#
+# `Restart=on-failure` plus a five-second delay is a loop, not a recovery: measured on
+# systemd 252, a service that always fails is restarted indefinitely (11 times in a
+# minute, the unit stuck in "activating (auto-restart)") because the default rate
+# limit never trips at that interval. The comment below says a configuration error
+# must settle into a visible failed state — these two lines are what makes that true.
+# Ten attempts over five minutes is enough for a transient problem (herdr still
+# starting, the network not up yet) and short enough that a real mistake becomes
+# `systemctl --user status`'s "failed" within a minute.
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+ExecStart={{.Executable}} run
+# The bridge runs in a service, which does not inherit the shell that installed it. Two things it
+# needs from that shell are written down here rather than hoped for: where `herdr` is (measured on
+# this machine: without it, the terminal's byte stream and every call to another computer failed with
+# "executable file not found in $PATH"), and a PATH that includes the usual user binary directories.
+Environment=PATH={{.Path}}
+{{if .HerdrBinPath}}Environment=HERDR_BIN_PATH={{.HerdrBinPath}}{{end}}
+# Restart is deliberately "on-failure" rather than "always": a configuration
+# error must settle into a visible failed state the check-up can report, instead
+# of hammering in a restart loop.
+Restart=on-failure
+RestartSec=5s
+Environment=PERCH_MANAGED_BY=systemd
+
+[Install]
+WantedBy=default.target

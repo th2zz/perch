@@ -1,0 +1,54 @@
+{
+  "why": "The closed value sets on the wire. The app compares against these strings (no enum, so a future herdr state stays representable), and a rename makes a list come back empty rather than raise an error — a quiet phone while agents wait. Both sides read this file.",
+  "vocabularies": [
+    {
+      "name": "decision_state",
+      "values": [
+        "pending",
+        "handled_locally",
+        "handled_elsewhere",
+        "expired"
+      ]
+    },
+    {
+      "name": "agent_status",
+      "values": [
+        "idle",
+        "working",
+        "blocked",
+        "done",
+        "unknown"
+      ]
+    },
+    {
+      "name": "needs_decision_agent_status",
+      "values": [
+        "blocked"
+      ]
+    },
+    {
+      "name": "host_status",
+      "values": [
+        "reachable",
+        "unreachable",
+        "unknown"
+      ]
+    },
+    {
+      "name": "decision_kind",
+      "values": [
+        "approve",
+        "reject",
+        "answer",
+        "prompt"
+      ]
+    },
+    {
+      "name": "message_role",
+      "values": [
+        "you",
+        "agent"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "why": "Every type the bridge can emit on the event stream. Both sides read this file; an unrecognised type is ignored by the app, so a one-sided rename is silent.",
+  "types": [
+    "snapshot",
+    "decision",
+    "resolved",
+    "resync",
+    "heartbeat"
+  ]
+}

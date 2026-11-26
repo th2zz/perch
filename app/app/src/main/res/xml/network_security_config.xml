@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is permitted because the connection is to the user's own computer
+  over a network the user already controls — normally a Tailscale tailnet, where
+  the link is WireGuard end to end, and otherwise the user's own LAN.
+
+  The alternative, shipping a self-signed certificate that the user has to
+  accept, would trade a real security property (nothing to accept, nothing to
+  get wrong) for a worse one: certificate acceptance dialogs are the classic
+  place where users learn to tap "continue" without reading. The shared secret
+  is the session token, which the bridge generates and the user copies once.
+
+  Recorded as an open item for M2: pin a certificate established at pairing
+  time, so the same guarantee comes from TLS rather than from network reach.
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

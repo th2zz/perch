@@ -1,0 +1,50 @@
+# Perch Bridge — herdr plugin manifest.
+#
+# Install with `herdr plugin link "$PWD/plugin"` or `herdr plugin install <owner>/<repo>`.
+#
+#   * [[startup]] hooks are one-shot initialization commands, not supervised
+#     daemons, so this hook calls `ensure-running` while systemd/launchd keeps
+#     the daemon alive.
+#   * [[events]] spawns one process per event, so the hook stays lightweight;
+#     the primary event path is the daemon's own socket subscription.
+#
+# `perch-bridge` is resolved from PATH, so the binary belongs in ~/.local/bin.
+# `perch-bridge doctor` verifies that it is reachable.
+
+id = "perch.bridge"
+name = "Perch Bridge"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Perch host-side bridge: install, start, report and act on your behalf"
+platforms = ["linux", "macos"]
+
+[[startup]]
+command = ["perch-bridge", "ensure-running"]
+
+[[actions]]
+id = "status"
+title = "Perch: show bridge status"
+contexts = ["workspace"]
+command = ["perch-bridge", "status"]
+
+[[actions]]
+id = "doctor"
+title = "Perch: run the check-up"
+contexts = ["workspace"]
+command = ["perch-bridge", "doctor"]
+
+[[actions]]
+id = "pair"
+title = "Perch: pair a phone"
+contexts = ["workspace"]
+command = ["perch-bridge", "pair"]
+
+[[panes]]
+id = "log"
+title = "Perch bridge activity"
+placement = "overlay"
+command = ["perch-bridge", "logs", "--follow"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["perch-bridge", "on-event"]

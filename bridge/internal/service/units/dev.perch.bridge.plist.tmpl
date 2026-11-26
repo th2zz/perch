@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.perch.bridge</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{.Executable}}</string>
+    <string>run</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>{{.Path}}</string>
+{{if .HerdrBinPath}}    <key>HERDR_BIN_PATH</key><string>{{.HerdrBinPath}}</string>{{end}}
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>{{.LogPath}}</string>
+  <key>StandardErrorPath</key><string>{{.LogPath}}</string>
+</dict>
+</plist>

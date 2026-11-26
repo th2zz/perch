@@ -1,0 +1,35 @@
+# Build output. The two Go modules are built from source; nothing generated
+# belongs in the repository.
+/bridge/perch-bridge
+/relay/perch-relay
+/bridge/bin/
+/relay/bin/
+# Cross-built binaries for the machines people actually run this on, produced by
+# lab/build-binaries.sh. Build output, not source: a 58MB directory in git would be
+# a permanent tax on every clone.
+/dist/
+
+# Android / Gradle. Local SDK paths and build caches are machine specific, and
+# `local.properties` in particular must never be committed.
+/app/.gradle/
+/app/build/
+/app/app/build/
+/app/local.properties
+/app/.idea/
+*.iml
+
+# Secrets. The FCM service-account key is the one credential that must never be
+# in the repository, and pairing tokens live in the bridge's state directory,
+# not here.
+service-account*.json
+# The release signing key is the app's identity: whoever holds it can ship updates
+# that Android accepts as coming from Perch. It is the user's own key, it lives
+# outside the repository, and `keystore.properties` points at it.
+keystore.properties
+*.jks
+*.keystore
+*.pem
+/lab/**/report-*.json
+
+# Python bytecode from the verification helpers in lab/lib.
+__pycache__/

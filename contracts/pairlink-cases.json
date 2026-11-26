@@ -1,0 +1,44 @@
+[
+  {
+    "why": "the ordinary case: a Tailscale address, a base64url token, a hostname",
+    "address": "100.64.0.1:45999",
+    "token": "hL0a_-Qx9Kd2Wz",
+    "name": "dev-laptop",
+    "link": "perch://pair?address=100.64.0.1%3A45999&name=dev-laptop&token=hL0a_-Qx9Kd2Wz"
+  },
+  {
+    "why": "the name has a space: Go writes it as '+', and the app must read it back as a space",
+    "address": "100.64.0.1:45999",
+    "token": "hL0a_-Qx9Kd2Wz",
+    "name": "Home Mac",
+    "link": "perch://pair?address=100.64.0.1%3A45999&name=Home+Mac&token=hL0a_-Qx9Kd2Wz"
+  },
+  {
+    "why": "a token with standard-base64 characters: '+' and '/' and '=' must survive, which is the case a naive decoder corrupts",
+    "address": "100.64.0.1:45999",
+    "token": "a+b/c=",
+    "name": "mac",
+    "link": "perch://pair?address=100.64.0.1%3A45999&name=mac&token=a%2Bb%2Fc%3D"
+  },
+  {
+    "why": "the name has every query-string metacharacter at once",
+    "address": "100.64.0.1:45999",
+    "token": "hL0a_-Qx9Kd2Wz",
+    "name": "R&D = 50% +1",
+    "link": "perch://pair?address=100.64.0.1%3A45999&name=R%26D+%3D+50%25+%2B1&token=hL0a_-Qx9Kd2Wz"
+  },
+  {
+    "why": "the address is a URL rather than host:port, which the app accepts either way",
+    "address": "http://my-box.local:45999",
+    "token": "hL0a_-Qx9Kd2Wz",
+    "name": "box",
+    "link": "perch://pair?address=http%3A%2F%2Fmy-box.local%3A45999&name=box&token=hL0a_-Qx9Kd2Wz"
+  },
+  {
+    "why": "no name at all: the parameter is omitted, and the app must not treat that as a broken link",
+    "address": "100.64.0.1:45999",
+    "token": "hL0a_-Qx9Kd2Wz",
+    "name": "",
+    "link": "perch://pair?address=100.64.0.1%3A45999&token=hL0a_-Qx9Kd2Wz"
+  }
+]

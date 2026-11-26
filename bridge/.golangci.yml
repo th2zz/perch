@@ -1,0 +1,32 @@
+# Static analysis for the bridge.
+#
+# The linter set is deliberately small: this binary is audited by reading it, so
+# the value of a linter here is catching the mistakes a reader is most likely to
+# miss (unchecked errors, shadowed variables, unhandled concurrency), not
+# enforcing stylistic preferences that the reviewer would have flagged anyway.
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - bodyclose
+    - errorlint
+    - copyloopvar
+    - nilerr
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - wastedassign
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

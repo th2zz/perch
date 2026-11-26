@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The Compose theme carries the real styling; this exists so the splash and
+      the window background do not flash white before Compose takes over.
+    -->
+    <style name="Theme.Perch" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/background_light</item>
+    </style>
+</resources>

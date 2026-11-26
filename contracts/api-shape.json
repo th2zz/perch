@@ -1,0 +1,321 @@
+{
+  "why": "Every JSON field name the bridge sends and the app decodes. The app asserts that each name it reads is one the bridge sends; a rename on either side fails a test instead of leaving a blank row. The error body ({error, fix}) is deliberately out of scope: it is written as a bare map in about twenty handlers, so pinning it means introducing a writer for it first.",
+  "types": [
+    {
+      "name": "agent",
+      "go_type": "discover.PlacedAgent",
+      "fields": [
+        "agent",
+        "agent_session",
+        "agent_status",
+        "cwd",
+        "display_agent",
+        "focused",
+        "foreground_cwd",
+        "host_id",
+        "interactive_ready",
+        "launch_pending",
+        "name",
+        "pane_id",
+        "revision",
+        "screen_detection_skipped",
+        "state_change_seq",
+        "state_labels",
+        "tab_id",
+        "terminal_title",
+        "title",
+        "workspace_id"
+      ]
+    },
+    {
+      "name": "conversation",
+      "go_type": "core.ConversationView",
+      "fields": [
+        "messages",
+        "readable",
+        "truncated",
+        "working",
+        "working_secs"
+      ]
+    },
+    {
+      "name": "conversation_message",
+      "go_type": "records.Message",
+      "fields": [
+        "role",
+        "text"
+      ]
+    },
+    {
+      "name": "decide_result",
+      "go_type": "core.DecideResult",
+      "fields": [
+        "decision",
+        "equivalent_command",
+        "seconds_saved"
+      ]
+    },
+    {
+      "name": "decision",
+      "go_type": "queue.Decision",
+      "fields": [
+        "agent_kind",
+        "answerable",
+        "approvable",
+        "created_at",
+        "display_agent",
+        "host_id",
+        "id",
+        "pane_id",
+        "prompt_text",
+        "rejectable",
+        "rule",
+        "state",
+        "state_reason",
+        "suggested_kind",
+        "tab_id",
+        "title",
+        "unmappable_reason",
+        "updated_at",
+        "workspace_id",
+        "workspace_label"
+      ]
+    },
+    {
+      "name": "decisions_response",
+      "go_type": "server.decisionsEnvelope",
+      "fields": [
+        "decisions"
+      ]
+    },
+    {
+      "name": "event",
+      "go_type": "core.Event",
+      "fields": [
+        "decision",
+        "extra",
+        "mirror",
+        "reason",
+        "type"
+      ]
+    },
+    {
+      "name": "folder",
+      "go_type": "core.FolderEntry",
+      "fields": [
+        "name",
+        "path"
+      ]
+    },
+    {
+      "name": "folders_response",
+      "go_type": "core.FoldersView",
+      "fields": [
+        "entries",
+        "home",
+        "parent",
+        "path",
+        "truncated"
+      ]
+    },
+    {
+      "name": "health",
+      "go_type": "core.Health",
+      "fields": [
+        "checked_at",
+        "herdr_version",
+        "items",
+        "overall",
+        "protocol"
+      ]
+    },
+    {
+      "name": "health_item",
+      "go_type": "core.HealthItem",
+      "fields": [
+        "detail",
+        "fix",
+        "id",
+        "status",
+        "title"
+      ]
+    },
+    {
+      "name": "health_response",
+      "go_type": "server.healthEnvelope",
+      "fields": [
+        "api_version",
+        "bridge_version",
+        "health"
+      ]
+    },
+    {
+      "name": "host",
+      "go_type": "discover.Host",
+      "fields": [
+        "enabled",
+        "fix",
+        "host_id",
+        "kind",
+        "label",
+        "reason",
+        "status"
+      ]
+    },
+    {
+      "name": "keys_response",
+      "go_type": "server.keysEnvelope",
+      "fields": [
+        "equivalent_command"
+      ]
+    },
+    {
+      "name": "mirror",
+      "go_type": "discover.Mirror",
+      "fields": [
+        "agents",
+        "herdr_version",
+        "hosts",
+        "panes",
+        "protocol",
+        "tabs",
+        "taken_at",
+        "workspaces"
+      ]
+    },
+    {
+      "name": "pane",
+      "go_type": "discover.PlacedPane",
+      "fields": [
+        "agent",
+        "agent_session",
+        "agent_status",
+        "cwd",
+        "display_agent",
+        "focused",
+        "foreground_cwd",
+        "host_id",
+        "pane_id",
+        "revision",
+        "state_labels",
+        "tab_id",
+        "terminal_id",
+        "terminal_title",
+        "terminal_title_stripped",
+        "title",
+        "tokens",
+        "workspace_id"
+      ]
+    },
+    {
+      "name": "session",
+      "go_type": "core.SessionView",
+      "fields": [
+        "agent",
+        "agent_status",
+        "answerable",
+        "approvable",
+        "can_deliver_text",
+        "chrome_lines",
+        "decision_id",
+        "display_agent",
+        "host_id",
+        "host_label",
+        "lines",
+        "menu",
+        "pane_id",
+        "read_at",
+        "rejectable",
+        "revision",
+        "rule",
+        "setup_fix",
+        "setup_reason",
+        "setup_required",
+        "source",
+        "status",
+        "tab_id",
+        "text",
+        "title",
+        "truncated",
+        "unavailable",
+        "unsent",
+        "unsent_command",
+        "workspace_id",
+        "workspace_label"
+      ]
+    },
+    {
+      "name": "snapshot_response",
+      "go_type": "server.snapshotEnvelope",
+      "fields": [
+        "decisions",
+        "mirror"
+      ]
+    },
+    {
+      "name": "tab",
+      "go_type": "discover.PlacedTab",
+      "fields": [
+        "agent_status",
+        "focused",
+        "host_id",
+        "label",
+        "number",
+        "pane_count",
+        "tab_id",
+        "workspace_id"
+      ]
+    },
+    {
+      "name": "usage_facts",
+      "go_type": "records.Facts",
+      "fields": [
+        "access",
+        "cached_tokens",
+        "context_used",
+        "context_window",
+        "effort",
+        "goal",
+        "goal_status",
+        "harness",
+        "model",
+        "readable",
+        "session_id",
+        "total_tokens"
+      ]
+    },
+    {
+      "name": "value_response",
+      "go_type": "server.valueEnvelope",
+      "fields": [
+        "week"
+      ]
+    },
+    {
+      "name": "value_stats",
+      "go_type": "queue.ValueStats",
+      "fields": [
+        "baseline_seconds",
+        "decisions",
+        "not_at_computer",
+        "seconds_saved"
+      ]
+    },
+    {
+      "name": "workspace",
+      "go_type": "discover.PlacedWorkspace",
+      "fields": [
+        "active_tab_id",
+        "agent_status",
+        "focused",
+        "host_id",
+        "label",
+        "number",
+        "pane_count",
+        "tab_count",
+        "tokens",
+        "workspace_id"
+      ]
+    }
+  ]
+}
