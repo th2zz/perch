@@ -53,28 +53,41 @@ func fakeCodexProcess(t *testing.T, cwd string) int {
 	return cmd.Process.Pid
 }
 
+func TestSleepHelperProcess(t *testing.T) {
+	if os.Getenv("PERCH_TEST_SLEEP_HELPER") != "1" {
+		return
+	}
+	time.Sleep(60 * time.Second)
+}
+
+func copyTestHelperBinary(t *testing.T, dest string) {
+	t.Helper()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatalf("resolve test executable: %v", err)
+	}
+	body, err := os.ReadFile(exe)
+	if err != nil {
+		t.Fatalf("read test executable: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(dest, body, 0o755); err != nil {
+		t.Fatalf("write helper binary: %v", err)
+	}
+}
+
 // fakeCodexBinary starts a process shaped like the binary itself: the executable is named codex,
 // while its argv deliberately does not name codex anywhere, so only the binary's own name can
 // identify it.
 func fakeCodexBinary(t *testing.T, cwd string) int {
 	t.Helper()
-	sleep, err := exec.LookPath("sleep")
-	if err != nil {
-		t.Skip("no sleep on this machine")
-	}
-	body, err := os.ReadFile(sleep)
-	if err != nil {
-		t.Skip("cannot read the sleep binary")
-	}
 	bin := filepath.Join(t.TempDir(), "bin", "codex")
-	if err := os.MkdirAll(filepath.Dir(bin), 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	if err := os.WriteFile(bin, body, 0o755); err != nil {
-		t.Fatalf("write binary: %v", err)
-	}
-	cmd := exec.Command(bin, "60")
-	cmd.Args = []string{"wyrm", "60"}
+	copyTestHelperBinary(t, bin)
+	cmd := exec.Command(bin, "-test.run=^TestSleepHelperProcess$")
+	cmd.Args = []string{"wyrm", "-test.run=^TestSleepHelperProcess$"}
+	cmd.Env = append(os.Environ(), "PERCH_TEST_SLEEP_HELPER=1")
 	cmd.Dir = cwd
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
@@ -1021,29 +1034,18 @@ func TestCodexStartWindowsFindsBothHalvesOfTheChain(t *testing.T) {
 	if resolved, err := filepath.EvalSymlinks(cwd); err == nil {
 		cwd = resolved
 	}
-	sleep, err := exec.LookPath("sleep")
-	if err != nil {
-		t.Skip("no sleep on this machine")
-	}
-	body, err := os.ReadFile(sleep)
-	if err != nil {
-		t.Skip("cannot read the sleep binary")
-	}
 	dir := t.TempDir()
 	script := filepath.Join(dir, "wrapped", "bin", "codex")
 	binary := filepath.Join(dir, "vendor", "bin", "codex")
-	for _, path := range []string{script, binary} {
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatalf("mkdir: %v", err)
-		}
+	if err := os.MkdirAll(filepath.Dir(script), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
 	}
-	if err := os.WriteFile(script, []byte("#!/bin/sh\n\"$1\" 60 &\nwait\n"), 0o755); err != nil {
+	if err := os.WriteFile(script, []byte("#!/bin/sh\n\"$1\" -test.run='^TestSleepHelperProcess$' &\nwait\n"), 0o755); err != nil {
 		t.Fatalf("write script: %v", err)
 	}
-	if err := os.WriteFile(binary, body, 0o755); err != nil {
-		t.Fatalf("write binary: %v", err)
-	}
+	copyTestHelperBinary(t, binary)
 	cmd := exec.Command("bash", script, binary)
+	cmd.Env = append(os.Environ(), "PERCH_TEST_SLEEP_HELPER=1")
 	cmd.Dir = cwd
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {

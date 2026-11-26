@@ -28,6 +28,7 @@ func TestApprovingHomeTrustSelectsYes(t *testing.T) {
 			"   Yes, I trust this folder\n\n"+
 			" Enter to confirm · Esc to cancel\n")
 	testherdr.Install(t, dir)
+	t.Setenv("HERDR_SOCKET_PATH", startFakeLocalHerdr(t))
 
 	c := newTestCore(t)
 	ctx := context.Background()

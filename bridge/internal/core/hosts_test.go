@@ -1,7 +1,10 @@
 package core
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +13,52 @@ import (
 	"github.com/th2zz/perch/bridge/internal/actions"
 	"github.com/th2zz/perch/bridge/internal/testherdr"
 )
+
+func startFakeLocalHerdr(t *testing.T) string {
+	t.Helper()
+	sock := filepath.Join(t.TempDir(), "herdr.sock")
+	ln, err := net.Listen("unix", sock)
+	if err != nil {
+		t.Fatalf("listen fake herdr: %v", err)
+	}
+	t.Cleanup(func() { _ = ln.Close() })
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func(c net.Conn) {
+				defer func() { _ = c.Close() }()
+				sc := bufio.NewScanner(c)
+				for sc.Scan() {
+					var req struct {
+						ID string `json:"id"`
+					}
+					if err := json.Unmarshal(sc.Bytes(), &req); err != nil {
+						return
+					}
+					reply := map[string]any{
+						"id": req.ID,
+						"result": map[string]any{
+							"type": "session_snapshot",
+							"snapshot": map[string]any{
+								"version":    "0.9.1",
+								"protocol":   22,
+								"workspaces": []any{},
+								"tabs":       []any{},
+								"panes":      []any{},
+								"agents":     []any{},
+							},
+						},
+					}
+					_ = json.NewEncoder(c).Encode(reply)
+				}
+			}(conn)
+		}
+	}()
+	return sock
+}
 
 // A saved machine that answers like the real thing.
 //
@@ -37,6 +86,7 @@ func fixtureDir(t *testing.T, fail string) string {
 		must(t, dir, "fail-"+fail, "")
 	}
 	testherdr.Install(t, dir)
+	t.Setenv("HERDR_SOCKET_PATH", startFakeLocalHerdr(t))
 	return dir
 }
 
